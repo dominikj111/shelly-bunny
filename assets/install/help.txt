@@ -1,0 +1,4 @@
+"install" command will make executable shortcuts for other runners in required destination.
+
+--help,        -h                       display this help
+--destination, -d "path_to_directory"   absolute path where the shortcuts will be created

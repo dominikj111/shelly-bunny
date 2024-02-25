@@ -1,0 +1,3 @@
+"backup" command will sync ...
+
+--help, -h  display this help

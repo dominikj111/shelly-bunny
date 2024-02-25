@@ -1,0 +1,7 @@
+This is proof of concept for the application subcommands.
+Try pass some numbers with -a and -b options to see what happens.
+
+--help,   -h      display this help
+          -a      number
+          -b      number (default: 1)
+--strict, -s      this will throw an error in case the [a] is undefined
