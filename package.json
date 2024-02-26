@@ -5,7 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "bun --test src/*.test.js"
+    "eslint:check": "./node_modules/.bin/eslint .",
+    "prettier:check": "./node_modules/.bin/prettier -c .",
+    "full-check": "bun run eslint:check && bun run prettier:check && bun test"
   },
   "author": "dominikj111",
   "license": "UNLICENSED",

@@ -35,7 +35,7 @@
 
 export default function run() {
 	// eslint-disable-next-line no-console
-	console.log("backup", arguments);
+	// console.log("backup", arguments);
 }
 
 run.minimist = {
