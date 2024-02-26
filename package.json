@@ -10,7 +10,7 @@
     "full-check": "bun run eslint:check && bun run prettier:check && bun test"
   },
   "author": "dominikj111",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "private": true,
   "devDependencies": {
     "@types/bun": "^1.0.7",
