@@ -1,12 +1,15 @@
 import minimist from "minimist";
 import path from "node:path";
+import { existsSync } from "node:fs";
 import assert from "bun:assert/strict";
 import { readFile } from "fs/promises";
-import { getRunners } from "./utilities/io.js";
+import { getRunners, getPaths } from "./utilities/io.js";
 
 import tsum from "./runners/tsum";
 import install from "./runners/install";
 import backup from "./runners/backup";
+
+const performChecks = !Bun.argv.includes("--no-check");
 
 const runners = {
 	backup,
@@ -14,13 +17,36 @@ const runners = {
 	tsum,
 };
 
-assert.deepStrictEqual(
-	Object.keys(runners)
-		.filter(r => r !== "install")
-		.sort(),
-	(await getRunners()).sort(),
-	"Not all runners are instantiated!",
-);
+if (performChecks) {
+	// Check we didn't forget to add any runner
+	assert.deepStrictEqual(
+		Object.keys(runners)
+			.filter(r => r !== "install")
+			.sort(),
+		(await getRunners()).sort(),
+		"Not all runners are instantiated!",
+	);
+
+	for (const runnerName in runners) {
+		// Check any runner contains minimist and exported default fucntion
+		assert.strictEqual(
+			typeof runners[runnerName].minimist,
+			"object",
+			`${runnerName} doesn't have exported minimist object`,
+		);
+		assert.strictEqual(
+			typeof runners[runnerName],
+			"function",
+			`${runnerName} doesn't have exported default function`,
+		);
+		// Check any runner has related help file
+		assert.strictEqual(
+			existsSync(getPaths(runnerName).assetsDir.help),
+			true,
+			`${runnerName} doesn't have the help file`,
+		);
+	}
+}
 
 const runnerName = Bun.argv[2];
 const runner = runners[runnerName];
