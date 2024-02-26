@@ -1,18 +1,13 @@
-import chalk from "chalk";
+import { error, success } from "../utilities/log";
 
 export default function run({ a, b = 1, strict }) {
 	if (strict && a === undefined) {
-		// eslint-disable-next-line no-console
-		console.log(chalk.red("[a] is undefined"));
+		error("'a' option is undefined");
 		process.exit(1);
 	}
 
 	const sum = Number(a) + Number(b);
-
-	// eslint-disable-next-line no-console
-	console.log("tsum result");
-	// eslint-disable-next-line no-console
-	console.log(`${a} + ${b} = ${chalk.green.bold(sum)}`);
+	success(`${a} + ${b} = ${sum}`);
 }
 
 run.minimist = {

@@ -1,35 +1,29 @@
 import { describe, beforeAll, afterAll, test, expect } from "bun:test";
-import path from "node:path";
 import { mkdir } from "node:fs/promises";
 import { $ } from "bun";
+import { getPaths } from "../utilities/io";
 
-const testsDirectory = path.resolve(
-	import.meta.url.replace("file://", ""),
-	"..",
-);
-const rootDirectory = path.resolve(testsDirectory, "..");
-// eslint-disable-next-line no-undef
-const runtimePath = Bun.argv[0];
+const paths = getPaths();
 
 describe("Installation script will generate shortcuts into the destion directory and it will make them executable.", () => {
 	let runners;
 	let generatedExecutables;
 
 	beforeAll(async () => {
-		await mkdir(`${testsDirectory}/temp`);
-		await $`${runtimePath} ${rootDirectory}/index.js install --destination ${testsDirectory}/temp`;
+		await mkdir(`${paths.root}/tests/temp`);
+		await $`${paths.runtime} ${paths.root}/index.js install --destination ${paths.root}/tests/temp`;
 
-		runners = (await $`ls -A ${rootDirectory}/runners`.text())
+		runners = (await $`ls -A ${paths.root}/runners`.text())
 			.split("\n")
 			.filter(Boolean);
 
-		generatedExecutables = (await $`ls -A ${testsDirectory}/temp`.text())
+		generatedExecutables = (await $`ls -A ${paths.root}/tests/temp`.text())
 			.split("\n")
 			.filter(Boolean);
 	});
 
 	afterAll(async () => {
-		await $`rm -rf ${testsDirectory}/temp`;
+		await $`rm -rf ${paths.root}/tests/temp`;
 	});
 
 	test("Install will generate shortcuts for runners", () => {
@@ -41,17 +35,15 @@ describe("Installation script will generate shortcuts into the destion directory
 	});
 
 	test("Generated shortcut is executable", async () => {
-		expect(
-			(await $`${testsDirectory}/temp/tsum -s -a 1 -b 2`.text())
-				.split("\n")
-				.slice(0, -1),
-		).toEqual(["tsum result", "1 + 2 = 3"]);
+		expect(await $`${paths.root}/tests/temp/tsum -s -a 1 -b 2`.text()).toBe(
+			"[success] 1 + 2 = 3\n",
+		);
 	});
 });
 
 test("Install sctipt has help option", async () => {
 	expect(
-		(await $`${runtimePath} ${rootDirectory}/index.js install --help`.text())
+		(await $`${paths.runtime} ${paths.root}/index.js install --help`.text())
 			.split("\n")
 			.slice(0, -1),
 	).not.toBeEmpty();
