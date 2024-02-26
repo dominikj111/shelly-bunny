@@ -12,9 +12,7 @@ This is my personal effort to scripting faster, reliable and scalable with [bun.
 ## Make own script
 
 - Create the js/ts file according to available scripts in the ./runners directory.
-
 - The assets directory contains files like `help.txt` used to display help by `-h` or `--help` options. This file is required.
-
 - Export default function, what stand for the script entry point. Add the `minimist` property to the exported entry function as an arguments description proceed by the [minimist](https://www.npmjs.com/package/minimist).
 
 Minimal example:
@@ -31,8 +29,8 @@ run.minimist = {
 ```
 
 - To confirm there is not issue with the structure, run `bun run . tsum` example script to perform the checks (see below).
-
 - Make unit tests and implements the script.
+- Run the `bun run full-check` to perform eslint and prettier checks as well as the unit tests.
 
 ## Contribute :)
 
