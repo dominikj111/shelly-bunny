@@ -48,6 +48,6 @@ In case of triggering the script via executable shortcut, not any check will be 
 ## TODO
 
 - [ ] confirm all help assets are correct
-- [ ] write documentation for functions
+- [ ] write documentation for functions and runners
 - [ ] generate docs ?
 - [ ] implement backup
