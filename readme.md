@@ -4,7 +4,7 @@ This is my personal effort to scripting faster, reliable and scalable with [bun.
 
 ## Getting Started
 
-1. fetch repository `git clone ...shelly-bunny.git && cd shelly-bunny`
+1. fetch repository `git clone .../shelly-bunny.git && cd shelly-bunny`
 2. install dependencies `bun install`
 3. install executable shortcuts to preferred destination listen in the $PATH environment `bun run . install -d ~/personal-cli`
 4. from any location, trigger the script `tsum -a 1 -b 2` to confirm the functionality
