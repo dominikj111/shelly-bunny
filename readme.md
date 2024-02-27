@@ -44,10 +44,3 @@ The reason for this is to confirm consistency of the this project and confirm al
 All scripts are checked any time any script is triggered. This may be avoided by passing the `--no-check` option.
 
 In case of triggering the script via executable shortcut, not any check will be performed (check the `assets/install/template.sh`).
-
-## TODO
-
-- [ ] confirm all help assets are correct
-- [ ] write documentation for functions and runners
-- [ ] generate docs ?
-- [ ] implement backup
