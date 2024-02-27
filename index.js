@@ -23,7 +23,7 @@ if (performChecks) {
 		Object.keys(runners)
 			.filter(r => r !== "install")
 			.sort(),
-		(await getRunners()).sort(),
+		await getRunners(),
 		"Not all runners are instantiated!",
 	);
 

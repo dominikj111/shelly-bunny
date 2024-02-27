@@ -1,3 +1,4 @@
-"backup" command will sync ...
+"backup" command does mirror or sync files/folders from source to destination by provided config file.
 
---help, -h  display this help
+--help, -h    display this help
+--config, -c  path to definition file
