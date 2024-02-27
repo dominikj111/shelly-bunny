@@ -1,6 +1,7 @@
 This is proof of concept for the application subcommands.
 Try pass some numbers with -a and -b options to see what happens.
 
+Options:
 --help,   -h      display this help
           -a      number
           -b      number (default: 1)

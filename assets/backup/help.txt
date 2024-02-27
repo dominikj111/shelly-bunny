@@ -1,4 +1,61 @@
 "backup" command does mirror or sync files/folders from source to destination by provided config file.
+If the config file is not provided, it will try to find one in current directory.
 
---help, -h    display this help
---config, -c  path to definition file
+It utilizes `zip -r0` and `rsync --delete --delete-excluded -arEhtN`.
+
+The config file is in .ini format with the following structure:
+
+----------- confing.ini -----------
+| [destination]                   | <- could by overriden by the --destination flag
+| /path/to/destination            |
+|                                 |
+| [exclude]                       |
+| .DS*                            |
+| .localized                      |
+| .vscode                         |
+| .git                            |
+| node_modules                    |
+| package-lock.json               |
+| Development/**/serverHome       |
+| Development/playground/*        |
+|                                 |
+| [backup]                        |
+| /path/to/source_a ~ *.sql*      | <- excludes all paths matching *.sql* pattern
+| /path/to/source_b ~ *.a.txt dir | <- excludes all paths matching *.a.txt and the dir folder from source_b
+-----------------------------------
+
+There is also support to list specific folder:
+
+----------- confing.ini -----------
+| [list.projects]                 | <- creates projects.txt in the destination folder
+| /path/to/folder_a               |
+| /path/to/folder_b               |
+| /path/to/folder_c               |
+|                                 |
+| [list.home]                     | <- creates home.txt in the destination folder
+| /path/to/folder_a               |
+| /path/to/folder_b               |
+| /path/to/folder_c               |
+|                                 |
+| [list.applications]             | <- creates applications.txt in the destination folder
+| /Applications                   |
+| ~/Applications                  |
+|                                 |
+| [list.brew_list]                | <- creates brew_list.txt in the destination folder
+| @`brew list`                    |
+|                                 |
+| [list.npm_ls_g]                 | <- creates npm_ls_g.txt in the destination folder
+| @`npm ls -g --depth=0`          |
+-----------------------------------
+
+Or just zip the folder:
+
+----------- confing.ini -----------
+| [zip]                           |
+| /path/to/folder                 |
+-----------------------------------
+
+Options:
+--help, -h        display this help
+--config, -c      path to definition file (if not provide it will try to find one in current directory)
+--destination, -d path to destination (will override config value)
