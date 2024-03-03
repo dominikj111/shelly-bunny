@@ -1,10 +1,14 @@
 import { $ } from "bun";
 import path from "node:path";
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import ini from "ini";
+import { error } from "./log";
 
 interface pathStructure {
 	root: string;
 	runtime: string;
+	cwd: string;
+	home: string;
 	assets?: string;
 	assetsDir?: {
 		[key: string]: string;
@@ -53,10 +57,17 @@ export async function getRunners(): Promise<string[]> {
 export function getPaths(scriptName?: string): pathStructure {
 	const pathsCacheKey = scriptName || "_";
 
+	if (process.env.HOME === undefined) {
+		error("process.env.HOME is undefined!");
+		process.exit(1);
+	}
+
 	if (pathsCache[pathsCacheKey] == undefined) {
 		pathsCache[pathsCacheKey] = {
 			root: path.resolve(import.meta.dir, ".."),
 			runtime: Bun.argv[0],
+			cwd: process.cwd(),
+			home: process.env.HOME,
 		};
 
 		if (scriptName) {
@@ -75,4 +86,25 @@ export function getPaths(scriptName?: string): pathStructure {
 	}
 
 	return structuredClone(pathsCache[pathsCacheKey] as pathStructure);
+}
+
+/**
+ * Read and parse the ini file.
+ */
+export function readConfig<T>(configPath: string): T {
+	return ini.parse(readFileSync(configPath, "utf8"));
+}
+
+/**
+ * Resolves path with ~ better.
+ */
+export function resolvePath(...args: string[]) {
+	const resolved = path.resolve(...args);
+	const tilda = resolved.indexOf("~");
+
+	if (tilda !== -1) {
+		return getPaths().home + resolved.slice(tilda + 1);
+	}
+
+	return resolved;
 }

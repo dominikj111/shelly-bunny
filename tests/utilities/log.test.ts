@@ -36,6 +36,7 @@ describe("error, warn, log and success are defined each calls the console.log wi
 		// not implemented yet, see the https://github.com/oven-sh/bun/issues/1825
 		// console.warn((global.console.log as Mock<any>).mock.calls)
 		// \u001B[33m[warn]\u001B[39m
+		// check the tests/utilities/backup.extras.test.ts
 		jest.restoreAllMocks();
 
 		global.console.log = originalConsoleLog;
