@@ -1,4 +1,3 @@
-import { $ } from "bun";
 import { getPaths, readConfig, resolvePath } from "./io";
 import { error } from "./log";
 import { existsSync } from "node:fs";
@@ -32,7 +31,7 @@ export function breakToPathsAndExcludes(
 	backupEntries: string[],
 ): { path: string; excludes?: string[] }[] {
 	return backupEntries.map(be => {
-		const [path, excludes = ""] = be.split(" ~ ");
+		const [path, excludes = ""] = be.split(" ! ");
 		return { path, excludes: excludes.split(" ") };
 	});
 }
@@ -97,12 +96,12 @@ export async function processInitials(props: RunnerProps): Promise<{
 
 	destinationPath = resolvePath(destinationPath);
 
-	if ((await $`rsync --version`.text()).length === 0) {
+	if (Bun.which("rsync") === null) {
 		error("rsync not found!");
 		process.exit(1);
 	}
 
-	if ((await $`zip --version`.text()).length === 0) {
+	if (Bun.which("zip") === null) {
 		error("zip not found!");
 		process.exit(1);
 	}
@@ -116,4 +115,46 @@ export async function processInitials(props: RunnerProps): Promise<{
 			ls: "ls -A",
 		},
 	};
+}
+
+/**
+ * It returns same substring starting on 0th index of each sequence.
+ *
+ * @param entries array of sequences
+ * @param options switchers to control the output
+ * @returns common left sequence
+ */
+export function findCommonLeftSequence(
+	entries: string[],
+	options: { stopAfterLastSequence?: string } = {},
+): string {
+	if (entries.length === 0 || entries[0].length === 0) {
+		return "";
+	}
+
+	let commonBase = entries[0][0];
+
+	for (;;) {
+		if (
+			entries.some(e => !e.startsWith(commonBase)) ||
+			entries[0].length <= commonBase.length
+		) {
+			break;
+		}
+		commonBase += entries[0][commonBase.length];
+	}
+
+	const result = commonBase.slice(0, commonBase.length - 1);
+
+	if (options.stopAfterLastSequence) {
+		const trimmedResult = new RegExp(
+			`^(.*${options.stopAfterLastSequence}).*$`,
+		).exec(result)?.[1];
+
+		if (trimmedResult !== undefined) {
+			return trimmedResult;
+		}
+	}
+
+	return result;
 }

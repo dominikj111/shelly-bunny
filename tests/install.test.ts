@@ -10,20 +10,22 @@ describe("Installation script will generate shortcuts into the destion directory
 	let generatedExecutables;
 
 	beforeAll(async () => {
-		await mkdir(`${paths.root}/tests/temp`);
-		await $`${paths.runtime} ${paths.root}/index.js install --destination ${paths.root}/tests/temp`;
+		await mkdir(`${paths.root}/tests/temp-install`);
+		await $`${paths.runtime} ${paths.root}/index.js install --destination ${paths.root}/tests/temp-install`;
 
 		runners = (await $`ls -A ${paths.root}/runners`.text())
 			.split("\n")
 			.filter(Boolean);
 
-		generatedExecutables = (await $`ls -A ${paths.root}/tests/temp`.text())
+		generatedExecutables = (
+			await $`ls -A ${paths.root}/tests/temp-install`.text()
+		)
 			.split("\n")
 			.filter(Boolean);
 	});
 
 	afterAll(async () => {
-		await $`rm -rf ${paths.root}/tests/temp`;
+		await $`rm -rf ${paths.root}/tests/temp-install`;
 	});
 
 	test("Install will generate shortcuts for runners", () => {
@@ -35,9 +37,9 @@ describe("Installation script will generate shortcuts into the destion directory
 	});
 
 	test("Generated shortcut is executable", async () => {
-		expect(await $`${paths.root}/tests/temp/tsum -s -a 1 -b 2`.text()).toBe(
-			"[success] 1 + 2 = 3\n",
-		);
+		expect(
+			await $`${paths.root}/tests/temp-install/tsum -s -a 1 -b 2`.text(),
+		).toBe("[success] 1 + 2 = 3\n");
 	});
 });
 

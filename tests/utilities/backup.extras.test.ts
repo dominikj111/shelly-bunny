@@ -12,12 +12,12 @@ import {
 	breakToPathsAndExcludes,
 	resolveBackupPath,
 	processInitials,
+	findCommonLeftSequence,
 } from "../../utilities/backup.extras";
 import { error } from "../../utilities/log";
-// import { existsSync } from "node:fs";
 
 test("'breakToPathsAndExcludes' allows to break backup path to path and excludes", () => {
-	expect(breakToPathsAndExcludes(["path ~ exclude1 exclude2"])).toEqual([
+	expect(breakToPathsAndExcludes(["path ! exclude1 exclude2"])).toEqual([
 		{ path: "path", excludes: ["exclude1", "exclude2"] },
 	]);
 });
@@ -59,36 +59,143 @@ test("'resolveBackupPath' denies to process path with ~ or .. in the middle", ()
 	jest.restoreAllMocks();
 });
 
+test("'findCommonLeftSequence' find same starting sequence", () => {
+	const input = ["apple", "appetizer", "application"];
+	const result = findCommonLeftSequence(input);
+	expect(result).toBe("app");
+});
+
+test("'findCommonLeftSequence' respets last sequence", () => {
+	const input = [
+		"apple/apple/apple",
+		"apple/apple/appetizer",
+		"apple/apple/application",
+	];
+
+	expect(findCommonLeftSequence(input)).toBe("apple/apple/app");
+	expect(findCommonLeftSequence(input, { stopAfterLastSequence: "le/" })).toBe(
+		"apple/apple/",
+	);
+	expect(findCommonLeftSequence(input, { stopAfterLastSequence: "lion/" })).toBe(
+		"apple/apple/app",
+	);
+});
+
 describe("'processInitials' accepts backup props and returns backup app relevant initials config", () => {
-	const configExists = false;
+	const configExistsMock = jest.fn();
+	const readConfigMock = jest.fn();
+	const bunWhichMock = jest.fn();
+
 	const processExit = process.exit;
+	const bunWhich = Bun.which;
 
 	beforeEach(() => {
 		mock.module("node:fs", () => ({
-			default: {
-				existsSync: jest.fn().mockReturnValue(configExists),
-			},
+			existsSync: configExistsMock,
+		}));
+
+		mock.module("../../utilities/io", () => ({
+			readConfig: readConfigMock,
+		}));
+
+		mock.module("../../utilities/log", () => ({
+			error: jest.fn().mockImplementation(m => {
+				throw new Error(m);
+			}),
 		}));
 
 		// @ts-expect-error: mock not same type
 		process.exit = jest.fn();
 
-		mock.module("../../utilities/log.js", () => ({
-			error: jest.fn().mockImplementation(() => {
-				throw new Error();
-			}),
-		}));
+		Bun.which = bunWhichMock;
 	});
 
 	afterEach(() => {
 		process.exit = processExit;
+		Bun.which = bunWhich;
 	});
 
-	it("errors if config path doesn't exist", () => {
+	it("errors if the config path is not provided or the config file doesn't exist", () => {
+		configExistsMock.mockReturnValue(false);
+
 		expect(() =>
 			processInitials({
 				config: "/path/to/backup.config.ini",
 			}),
 		).toThrow();
+
+		// @ts-expect-error: passing incorect props
+		expect(() => processInitials({})).toThrow();
+
+		expect(() =>
+			processInitials({
+				config: "",
+			}),
+		).toThrow();
+	});
+
+	it("errors if rsync or zip commands are not found", () => {
+		configExistsMock.mockReturnValue(true);
+		readConfigMock.mockReturnValue({ destination: "/some/path/destination" });
+
+		const whichOriginal = Bun.which;
+		const whichMock = jest.fn();
+		Bun.which = whichMock;
+
+		whichMock.mockImplementation(s => (s === "rsync" ? null : "test/path"));
+
+		expect(() =>
+			processInitials({
+				config: "/path/to/backup.config.ini",
+			}),
+		).toThrow(new Error("rsync not found!"));
+
+		whichMock.mockImplementation(s => (s === "zip" ? null : "test/path"));
+
+		expect(() =>
+			processInitials({
+				config: "/path/to/backup.config.ini",
+			}),
+		).toThrow(new Error("zip not found!"));
+
+		Bun.which = whichOriginal;
+	});
+
+	describe("Given the config", () => {
+		it("errors if backup destination doesn't exist in config nor provided", () => {
+			configExistsMock.mockReturnValue(true);
+
+			expect(() =>
+				processInitials({
+					config: "/path/to/backup.config.ini",
+				}),
+			).toThrow();
+
+			expect(() =>
+				processInitials({
+					config: "/path/to/backup.config.ini",
+					destination: "",
+				}),
+			).toThrow();
+		});
+
+		it("passes if backup destination is available in config or props", () => {
+			configExistsMock.mockReturnValue(true);
+
+			expect(() =>
+				processInitials({
+					config: "/path/to/backup.config.ini",
+					destination: "/some/path/destination",
+				}),
+			).not.toThrow();
+
+			readConfigMock.mockReturnValue({ destination: "/some/path/destination" });
+
+			expect(() =>
+				processInitials({
+					config: "/path/to/backup.config.ini",
+				}),
+			).not.toThrow();
+		});
 	});
 });

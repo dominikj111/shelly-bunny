@@ -1,13 +1,14 @@
 // import { $, chalk, sleep } from "zx";
 // import cliProgress from "cli-progress";
 
-// import { $ } from "bun";
+import { $ } from "bun";
 import { resolvePath } from "../utilities/io";
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync, mkdirSync, statSync } from "node:fs";
 import {
 	breakToPathsAndExcludes,
 	resolveBackupPath,
 	processInitials,
+	findCommonLeftSequence,
 } from "../utilities/backup.extras";
 import type { RunnerProps } from "../utilities/backup.extras";
 
@@ -52,17 +53,54 @@ export default async function run(props: RunnerProps) {
 	const { rsync, zip } = commands;
 	const commandsToRun: string[] = [];
 
-	for (const { path, excludes = [] } of breakToPathsAndExcludes(
-		parsedConfig.backup,
-	)) {
-		const resolvedBackupPath = resolveBackupPath(path, homealias);
+	const rsyncPaths = breakToPathsAndExcludes(parsedConfig.backup);
+
+	const commonPathBase = findCommonLeftSequence(
+		[
+			...rsyncPaths.map(({ path }) => path.split(" ! ")[0]),
+			...(parsedConfig.zip ?? []),
+		],
+		{ stopAfterLastSequence: "/" },
+	);
+
+	for (const { path, excludes = [] } of rsyncPaths) {
+		const pathStats = statSync(path);
+
+		let resolvedBackupPath = resolveBackupPath(
+			path.replace(commonPathBase, ""),
+			homealias,
+		);
+
+		if (pathStats.isDirectory()) {
+			resolvedBackupPath = resolvedBackupPath.split("/").slice(0, -1).join("/");
+			if (resolvedBackupPath) {
+				resolvedBackupPath += "/";
+			}
+		}
+
+		const joinedExcludes = [...(parsedConfig.exclude ?? []), excludes]
+			.map(e => `--exclude '${e}'`)
+			.join(" ");
+		const backupDestination = `${destinationPath}/${resolvedBackupPath}`;
+
+		if (backupDestination[backupDestination.length - 1] === "/") {
+			mkdirSync(backupDestination, { recursive: true });
+		} else {
+			mkdirSync(backupDestination.split("/").slice(0, -1).join("/"), {
+				recursive: true,
+			});
+		}
+
 		commandsToRun.push(
-			`${rsync} ${(parsedConfig.exclude ?? []).map(e => `--exclude ${e}`).join(" ")} ${excludes.map(e => `--exclude ${e}`).join(" ")} ${resolvePath(path)} ${destinationPath}/${resolvedBackupPath}`,
+			`${rsync} ${joinedExcludes} ${resolvePath(path)} ${backupDestination}`,
 		);
 	}
 
 	for (const path of parsedConfig.zip ?? []) {
-		const resolvedBackupPath = resolveBackupPath(path, homealias);
+		const resolvedBackupPath = resolveBackupPath(
+			path.replace(commonPathBase, ""),
+			homealias,
+		);
 		commandsToRun.push(
 			`${zip} ${destinationPath}/${resolvedBackupPath}.zip ${resolvePath(path)}`,
 		);
@@ -88,7 +126,15 @@ export default async function run(props: RunnerProps) {
 		}
 	}
 
-	// console.log(commandsToRun.join("\n\n"));
+	if (!existsSync(destinationPath)) {
+		mkdirSync(destinationPath, { recursive: true });
+	}
+
+	console.log(commandsToRun.join("\n\n"));
+
+	for (const cmd of commandsToRun) {
+		Bun.spawnSync(cmd.split(" "));
+	}
 }
 
 run.minimist = {
